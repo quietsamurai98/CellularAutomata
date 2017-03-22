@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<body>
+
+<!-- Content will go here -->
+
+<h1>Conway's Game Of Life</h1>
+
+<canvas id="gameCanvas" width="500" height="500"></canvas>
+
+
+<script>
+    function genRandomBoard(size){
+        var out = [];
+        for(var i = 0; i < size; i++){
+            var tempRow = [];
+            for(var j = 0; j < size; j++){
+                tempRow.push(Math.floor(2*Math.random()));
+            }
+            out.push(tempRow);
+        }
+        return out;
+    }
+    
+    function genBlankBoard(size){
+        var out = [];
+        for(var i = 0; i < size; i++){
+            var tempRow = [];
+            for(var j = 0; j < size; j++){
+                tempRow.push(0);
+            }
+            out.push(tempRow);
+        }
+        return out;
+    }
+    
+    function drawBoard(boardArr) {
+        var gameCanvas = document.getElementById("gameCanvas");
+        var width = gameCanvas.width;
+        var height = gameCanvas.height;
+        var gameDraw = gameCanvas.getContext("2d");
+        
+        for (var row = 0; row < height; row++){
+            for(var col = 0; col < width; col++){
+            
+                gameDraw.fillStyle = (boardArr[row][col] == 1) ? ("#000000") : ("#FFFFFF");
+                
+                gameDraw.fillRect(row, col, 1, 1);
+            }
+        }
+    }
+    
+    
+    //arrayClone written by Andrew Ray, can be found at http://blog.andrewray.me/how-to-clone-a-nested-array-in-javascript/
+    function arrayClone( arr ) {
+        var i, copy;
+        if( Array.isArray( arr ) ) {
+            copy = arr.slice( 0 );
+            for( i = 0; i < copy.length; i++ ) {
+                copy[ i ] = arrayClone( copy[ i ] );
+            }
+            return copy;
+        } else if( typeof arr === 'object' ) {
+            throw 'Cannot clone array containing an object!';
+        } else {
+            return arr;
+        }
+    }
+    
+    
+    var randomAnimation = setInterval(function(){ drawBoard(genRandomBoard(500)); }, 100);
+
+    function nextGeneration(parentBoard){
+        var childBoard = genBlankBoard(parentBoard.length);
+        
+        //CALCULATE NEXT GENERATION
+        
+        return childBoard;
+    }
+    
+</script>
+
+</body>
+</html>
