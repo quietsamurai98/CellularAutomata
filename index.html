@@ -17,7 +17,12 @@
     
     <div id = "cellSizeControls" style = "margin:10px 5px;">
       Cell size (pixels): <br>
-      <input type="number" id="inputCellSize" value="3">
+      <input type="number" id="inputCellSize" value="2" onchange="setCanvasSize();">
+    </div>
+    
+    <div id = "boardSizeControls" style = "margin:10px 5px;">
+      Board size: <br>
+      <input type="number" id="inputBoardSize" value="200" onchange="reset()">
     </div>
 
 </div>
@@ -27,14 +32,29 @@
 </div>
 
 <script>
-    //var randomAnimation = setInterval(function(){ drawBoard(genRandomBoard(500)); }, 100);
-    
-    var boardSize = 200;
-    
+    var boardSize = document.getElementById("inputBoardSize").value;
     var globalBoard = genRandomBoard(boardSize);
+    setCanvasSize()
     
+    var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
     
-    var gameAnimation = setInterval(function(){ renderNextGeneration(); }, 10);
+    function reset(){
+        clearInterval(gameAnimation);
+        boardSize = document.getElementById("inputBoardSize").value;
+        globalBoard = genRandomBoard(boardSize);
+        setCanvasSize()
+        
+        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
+    }
+    
+    function setCanvasSize(){
+        var gameCanvas = document.getElementById("gameCanvas");
+        var gameDraw = gameCanvas.getContext("2d");
+        var canvasSize = boardSize * document.getElementById("inputCellSize").value + 2;
+        gameDraw.canvas.width = canvasSize;
+        gameDraw.canvas.height = canvasSize;
+    }
+    
     
     function changeDelay (){
         clearInterval(gameAnimation);
@@ -77,8 +97,7 @@
         var arrSize = boardArr.length;
         var cellSize = document.getElementById("inputCellSize").value;
         var canvasSize = arrSize * cellSize + 2;
-        gameDraw.canvas.width = canvasSize;
-        gameDraw.canvas.height = canvasSize;
+
         
         gameDraw.beginPath();
         gameDraw.lineWidth="1";
@@ -86,10 +105,13 @@
         gameDraw.rect(0,0,canvasSize,canvasSize);
         gameDraw.stroke();
         
+        gameDraw.clearRect(1,1,canvasSize-2,canvasSize-2);
+        
+        gameDraw.fillStyle = "#000000";
         for (var row = 0; row < arrSize; row++){
             for(var col = 0; col < arrSize; col++){
-                gameDraw.fillStyle = (boardArr[row][col] == 1) ? ("#000000") : ("#FFFFFF");
-                gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
+                if (boardArr[row][col] == 1)
+                    gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
             }
         }
     }
