@@ -8,10 +8,45 @@
 
 <h1>Conway's Game Of Life</h1>
 
-<canvas id="gameCanvas" width="500" height="500"></canvas>
+<div id = controls style = "display: flex">
 
+    <div id = "delayControls" style = "margin:10px 5px;">
+      Animation Delay (ms): <br>
+      <input type="number" id="inputDelay" value="10" onchange="changeDelay()">
+    </div>
+    
+    <div id = "cellSizeControls" style = "margin:10px 5px;">
+      Cell size (pixels): <br>
+      <input type="number" id="inputCellSize" value="3">
+    </div>
+
+</div>
+
+<div id="gameDisplay">
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+</div>
 
 <script>
+    //var randomAnimation = setInterval(function(){ drawBoard(genRandomBoard(500)); }, 100);
+    
+    var boardSize = 200;
+    
+    var globalBoard = genRandomBoard(boardSize);
+    
+    
+    var gameAnimation = setInterval(function(){ renderNextGeneration(); }, 10);
+    
+    function changeDelay (){
+        clearInterval(gameAnimation);
+        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
+    }
+
+    function renderNextGeneration() {
+        globalBoard = nextGeneration(globalBoard);
+        drawBoard(globalBoard);
+    }
+    
+    
     function genRandomBoard(size){
         var out = [];
         for(var i = 0; i < size; i++){
@@ -38,16 +73,23 @@
     
     function drawBoard(boardArr) {
         var gameCanvas = document.getElementById("gameCanvas");
-        var width = gameCanvas.width;
-        var height = gameCanvas.height;
         var gameDraw = gameCanvas.getContext("2d");
+        var arrSize = boardArr.length;
+        var cellSize = document.getElementById("inputCellSize").value;
+        var canvasSize = arrSize * cellSize + 2;
+        gameDraw.canvas.width = canvasSize;
+        gameDraw.canvas.height = canvasSize;
         
-        for (var row = 0; row < height; row++){
-            for(var col = 0; col < width; col++){
-            
+        gameDraw.beginPath();
+        gameDraw.lineWidth="1";
+        gameDraw.strokeStyle="blue";
+        gameDraw.rect(0,0,canvasSize,canvasSize);
+        gameDraw.stroke();
+        
+        for (var row = 0; row < arrSize; row++){
+            for(var col = 0; col < arrSize; col++){
                 gameDraw.fillStyle = (boardArr[row][col] == 1) ? ("#000000") : ("#FFFFFF");
-                
-                gameDraw.fillRect(row, col, 1, 1);
+                gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
             }
         }
     }
@@ -70,14 +112,42 @@
     }
     
     
-    var randomAnimation = setInterval(function(){ drawBoard(genRandomBoard(500)); }, 100);
+    
 
     function nextGeneration(parentBoard){
         var childBoard = genBlankBoard(parentBoard.length);
+        var numRows = parentBoard.length;
+        var numCols = parentBoard[0].length;
         
-        //CALCULATE NEXT GENERATION
+        for(var r=0; r<numRows; r++)
+            for(var c=0; c<numCols; c++)
+                childBoard[r][c] = calcState(r,c,parentBoard);
         
         return childBoard;
+    }
+    
+    function calcState(r,c,arr){
+        var state;
+        var neighborSum = getNeighborSum(r,c,arr);
+        
+        if(arr[r][c] == 1){
+            state = (neighborSum == 2 || neighborSum == 3) ? (1) : (0)
+        } else {
+            state = (neighborSum == 3) ? (1) : (0)
+        }
+        
+        return state;
+    }
+    
+    function getNeighborSum(row,col,arr){
+        var sum = 0;
+        for( var r = row-1; r <= row+1; r++ ){
+            for( var c = col-1; c <= col+1; c++ ){
+                sum += (r == -1 || c == -1 || r == arr.length || c == arr[0].length) ? (0) : (arr[r][c]);
+            }
+        }
+        sum -= arr[row][col];
+        return sum;
     }
     
 </script>
