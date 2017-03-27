@@ -27,20 +27,69 @@
 
 </div>
 
+<div id = "ruleControls" style = "display: flex">
+    <div id = "buttonTable" style = "margin:10px 5px;">
+      <table>
+          <tr>
+            <td>Number of neighbors</td>
+            <td>0</td>
+            <td>1</td>
+            <td>2</td>
+            <td>3</td>
+            <td>4</td>
+            <td>5</td>
+            <td>6</td>
+            <td>7</td>
+            <td>8</td>
+          </tr>
+          <tr>
+            <td>Dead cell becomes active</td>
+            <td> <input type="checkbox" id="b0"> </td>
+            <td> <input type="checkbox" id="b1"> </td>
+            <td> <input type="checkbox" id="b2"> </td>
+            <td> <input type="checkbox" id="b3" checked> </td>
+            <td> <input type="checkbox" id="b4"> </td>
+            <td> <input type="checkbox" id="b5"> </td>
+            <td> <input type="checkbox" id="b6"> </td>
+            <td> <input type="checkbox" id="b7"> </td>
+            <td> <input type="checkbox" id="b8"> </td>
+          </tr>
+          <tr>
+            <td>Active cell will stay active</td>
+            <td> <input type="checkbox" id="s0"> </td>
+            <td> <input type="checkbox" id="s1"> </td>
+            <td> <input type="checkbox" id="s2" checked> </td>
+            <td> <input type="checkbox" id="s3" checked> </td>
+            <td> <input type="checkbox" id="s4"> </td>
+            <td> <input type="checkbox" id="s5"> </td>
+            <td> <input type="checkbox" id="s6"> </td>
+            <td> <input type="checkbox" id="s7"> </td>
+            <td> <input type="checkbox" id="s8"> </td>
+          </tr>
+        </table>
+    </div>
+    <div id = "updateRule" style = "margin:10px 5px;">
+        <br></br>
+        <button type="button" onclick="resetRule()">Update rule and restart</button>
+        <br></br>
+    </div>
+</div>
+
 <div id="gameDisplay">
     <canvas id="gameCanvas" width="500" height="500"></canvas>
 </div>
 
 <script>
-    var boardSize = document.getElementById("inputBoardSize").value;
+    var boardSize = document.getElementById("inputBoardSize").value | 0;
     var globalBoard = genRandomBoard(boardSize);
+    var ruleArr = [ [0,0,0,1,0,0,0,0,0], [0,0,1,1,0,0,0,0,0] ];
     setCanvasSize()
     
     var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
     
     function reset(){
         clearInterval(gameAnimation);
-        boardSize = document.getElementById("inputBoardSize").value;
+        boardSize = document.getElementById("inputBoardSize").value | 0;
         globalBoard = genRandomBoard(boardSize);
         setCanvasSize()
         
@@ -55,6 +104,16 @@
         gameDraw.canvas.height = canvasSize;
     }
     
+    function resetRule(){
+        for(var i=0; i<9; i++){
+            ruleArr[0][i] = (document.getElementById("b"+i).checked) ? 1 : 0;
+        }
+        for(var i=0; i<9; i++){
+            ruleArr[1][i] = (document.getElementById("s"+i).checked) ? 1 : 0;
+        }
+        reset();
+    }
+    
     
     function changeDelay (){
         clearInterval(gameAnimation);
@@ -62,8 +121,12 @@
     }
 
     function renderNextGeneration() {
-        globalBoard = nextGeneration(globalBoard);
+        calcNextGeneration(globalBoard);
         drawBoard(globalBoard);
+    }
+    
+    function calcNextGeneration(){
+        globalBoard = nextGeneration(globalBoard);
     }
     
     
@@ -149,23 +212,16 @@
     }
     
     function calcState(r,c,arr){
-        var state;
+        var state=arr[r][c];
         var neighborSum = getNeighborSum(r,c,arr);
-        
-        if(arr[r][c] == 1){
-            state = (neighborSum == 2 || neighborSum == 3) ? (1) : (0)
-        } else {
-            state = (neighborSum == 3) ? (1) : (0)
-        }
-        
-        return state;
+        return ruleArr[state][neighborSum];
     }
     
     function getNeighborSum(row,col,arr){
         var sum = 0;
         for( var r = row-1; r <= row+1; r++ ){
             for( var c = col-1; c <= col+1; c++ ){
-                sum += (r == -1 || c == -1 || r == arr.length || c == arr[0].length) ? (0) : (arr[r][c]);
+                sum += arr[(boardSize + r) % boardSize][(boardSize + c) % boardSize];
             }
         }
         sum -= arr[row][col];
