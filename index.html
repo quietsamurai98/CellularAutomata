@@ -27,7 +27,7 @@
 
 </div>
 
-<div id = "ruleControls" style = "display: flex">
+<div id = "ruleControls" style = "display: flex; align-items: center">
     <div id = "buttonTable" style = "margin:10px 5px;">
       <table>
           <tr>
@@ -69,9 +69,9 @@
         </table>
     </div>
     <div id = "updateRule" style = "margin:10px 5px;">
-        <br></br>
         <button type="button" onclick="resetRule()">Update rule and restart</button>
         <br></br>
+        Cell density: <input type="number" id="inputRandomDensity" value="0.5" min="0" max="1" step="0.01">
     </div>
 </div>
 
@@ -93,7 +93,7 @@
         globalBoard = genRandomBoard(boardSize);
         setCanvasSize()
         
-        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
+        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     }
     
     function setCanvasSize(){
@@ -121,21 +121,18 @@
     }
 
     function renderNextGeneration() {
-        calcNextGeneration(globalBoard);
-        drawBoard(globalBoard);
-    }
-    
-    function calcNextGeneration(){
         globalBoard = nextGeneration(globalBoard);
+        drawBoard(globalBoard);
     }
     
     
     function genRandomBoard(size){
         var out = [];
+        var prob = parseFloat(document.getElementById("inputRandomDensity").value);
         for(var i = 0; i < size; i++){
             var tempRow = [];
             for(var j = 0; j < size; j++){
-                tempRow.push(Math.floor(2*Math.random()));
+                tempRow.push((Math.random()<prob) ? 1 : 0);
             }
             out.push(tempRow);
         }
@@ -169,12 +166,29 @@
         gameDraw.stroke();
         
         gameDraw.clearRect(1,1,canvasSize-2,canvasSize-2);
+        //fadeOut(gameDraw, cellSize, arrSize);
+        
         
         gameDraw.fillStyle = "#000000";
         for (var row = 0; row < arrSize; row++){
             for(var col = 0; col < arrSize; col++){
                 if (boardArr[row][col] == 1)
                     gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
+            }
+        }
+    }
+    
+    function fadeOut(gameDraw, cellSize, arrSize){
+        for (var row = 0; row < arrSize; row++){
+            for(var col = 0; col < arrSize; col++){
+                var pxlData = gameDraw.getImageData(row*cellSize+1, col*cellSize+1, 1, 1).data;
+                
+                var r = (pxlData[0]<255) ? (pxlData[0]+1) : (255);
+                var g = (pxlData[1]<255) ? (pxlData[1]+1) : (255);
+                var b = (pxlData[2]<255) ? (pxlData[2]+1) : (255);
+                
+                gameDraw.fillStyle = "rgb("+r+","+g+","+b+")";
+                gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
             }
         }
     }
