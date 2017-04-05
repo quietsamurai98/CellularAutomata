@@ -5,8 +5,6 @@
 <title>Conway's Game of Life</title>
 <body>
 
-<!-- Content will go here -->
-
 <h1>Conway's Game Of Life</h1>
 
 <div id = controls style = "display: flex">
@@ -24,6 +22,11 @@
     <div id = "boardSizeControls" style = "margin:10px 5px;">
       Board size: <br>
       <input type="number" id="inputBoardSize" value="200" onchange="reset()">
+    </div>
+    
+    <div id = "pauseControls" style = "margin:10px 5px;">
+    <br>
+      <input type="button" id="btnPause" value="Pause" onclick="togglePause()">
     </div>
 
 </div>
@@ -84,15 +87,18 @@
     var boardSize = document.getElementById("inputBoardSize").value | 0;
     var globalBoard = genRandomBoard(boardSize);
     var ruleArr = [ [0,0,0,1,0,0,0,0,0], [0,0,1,1,0,0,0,0,0] ];
+    var isPaused = false;
+    document.getElementById("gameCanvas").addEventListener("mousedown", getPosition, false);
     setCanvasSize()
     
-    var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
+    var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     
     function reset(){
         clearInterval(gameAnimation);
         boardSize = document.getElementById("inputBoardSize").value | 0;
         globalBoard = genRandomBoard(boardSize);
-        setCanvasSize()
+        setCanvasSize();
+        isPaused = false;
         
         gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     }
@@ -118,9 +124,33 @@
     
     function changeDelay (){
         clearInterval(gameAnimation);
-        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value);
+        isPaused = false;
+        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     }
+    
+    function getPosition(event){
+      var x = event.x;
+      var y = event.y;
 
+      var canvas = document.getElementById("gameCanvas");
+
+      x -= canvas.offsetLeft;
+      y -= canvas.offsetTop;
+      
+      var cellSize = document.getElementById("inputCellSize").value;
+      var r = Math.floor(x/cellSize);
+      var c = Math.floor(y/cellSize);
+      
+      drawCell(r,c);
+    }
+    
+    function drawCell(r, c){
+        if(isPaused){
+            globalBoard[r][c] = globalBoard[r][c] ? 0 : 1;
+            drawBoard(globalBoard);
+        }
+    }
+    
     function renderNextGeneration() {
         globalBoard = nextGeneration(globalBoard);
         drawBoard(globalBoard);
@@ -194,26 +224,6 @@
         }
     }
     
-    
-    //arrayClone written by Andrew Ray, can be found at http://blog.andrewray.me/how-to-clone-a-nested-array-in-javascript/
-    function arrayClone( arr ) {
-        var i, copy;
-        if( Array.isArray( arr ) ) {
-            copy = arr.slice( 0 );
-            for( i = 0; i < copy.length; i++ ) {
-                copy[ i ] = arrayClone( copy[ i ] );
-            }
-            return copy;
-        } else if( typeof arr === 'object' ) {
-            throw 'Cannot clone array containing an object!';
-        } else {
-            return arr;
-        }
-    }
-    
-    
-    
-
     function nextGeneration(parentBoard){
         var childBoard = genBlankBoard(parentBoard.length);
         var numRows = parentBoard.length;
@@ -241,6 +251,18 @@
         }
         sum -= arr[row][col];
         return sum;
+    }
+    
+    function togglePause(){
+        if(isPaused){
+            isPaused = false;
+            gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
+            document.getElementById("btnPause").value = "Pause";
+        } else {
+            isPaused = true;
+            clearInterval(gameAnimation);
+            document.getElementById("btnPause").value = "Play";
+        }
     }
     
 </script>
