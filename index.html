@@ -99,7 +99,7 @@
         globalBoard = genRandomBoard(boardSize);
         setCanvasSize();
         isPaused = false;
-        
+        document.getElementById("btnPause").value = "Pause";
         gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     }
     
@@ -125,6 +125,7 @@
     function changeDelay (){
         clearInterval(gameAnimation);
         isPaused = false;
+        document.getElementById("btnPause").value = "Pause";
         gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     }
     
