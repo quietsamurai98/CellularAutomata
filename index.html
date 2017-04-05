@@ -80,7 +80,7 @@
 </div>
 
 <div id="gameDisplay">
-    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <canvas id="gameCanvas" width="500" height="500" onmousedown="dragStart(event)" onmouseup="dragEnd(event)" onmousemove="dragMove(event)"></canvas>
 </div>
 
 <script>
@@ -88,7 +88,6 @@
     var globalBoard = genRandomBoard(boardSize);
     var ruleArr = [ [0,0,0,1,0,0,0,0,0], [0,0,1,1,0,0,0,0,0] ];
     var isPaused = false;
-    document.getElementById("gameCanvas").addEventListener("mousedown", getPosition, false);
     setCanvasSize()
     
     var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
@@ -122,33 +121,65 @@
     }
     
     
-    function changeDelay (){
+    function changeDelay(){
         clearInterval(gameAnimation);
         isPaused = false;
         document.getElementById("btnPause").value = "Pause";
         gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
     }
     
-    function getPosition(event){
-      var x = event.x;
-      var y = event.y;
+    function dragStart(event){
+        dragging = true;
+        event.target.style = "cursor: crosshair";
+        var x = event.x;
+        var y = event.y;
 
-      var canvas = document.getElementById("gameCanvas");
+        var canvas = document.getElementById("gameCanvas");
 
-      x -= canvas.offsetLeft;
-      y -= canvas.offsetTop;
+        x -= canvas.offsetLeft;
+        y -= canvas.offsetTop;
+
+        var cellSize = document.getElementById("inputCellSize").value;
+        var r = Math.floor(x/cellSize);
+        var c = Math.floor(y/cellSize);
+        
+        dragState = globalBoard[r][c] ? 0: 1;
+        drawCell(r,c);
+    }
+    function dragEnd(event){
+        dragging = false;
+        event.target.style = "cursor: default";
+    }
+    function dragMove(event){
+        if (dragging){
+            event.target.style = "cursor: crosshair";
+            drag(event);
+        }
+    }
+    function drag(event){
+        var x = event.x;
+        var y = event.y;
+
+        var canvas = document.getElementById("gameCanvas");
+
+        x -= canvas.offsetLeft;
+        y -= canvas.offsetTop;
+
+        var cellSize = document.getElementById("inputCellSize").value;
+        var r = Math.floor(x/cellSize);
+        var c = Math.floor(y/cellSize);
       
-      var cellSize = document.getElementById("inputCellSize").value;
-      var r = Math.floor(x/cellSize);
-      var c = Math.floor(y/cellSize);
-      
-      drawCell(r,c);
+        drawCell(r,c);
     }
     
     function drawCell(r, c){
-        if(isPaused){
-            globalBoard[r][c] = globalBoard[r][c] ? 0 : 1;
-            drawBoard(globalBoard);
+        if(isPaused && r<boardSize && c<boardSize && r>=0 && c>=0){
+            globalBoard[r][c] = dragState;
+            var gameCanvas = document.getElementById("gameCanvas");
+            var gameDraw = gameCanvas.getContext("2d");
+            var cellSize = document.getElementById("inputCellSize").value;
+            gameDraw.fillStyle = dragState ? "#000000" : "#FFFFFF";
+            gameDraw.fillRect(r*cellSize+1, c*cellSize+1, cellSize, cellSize);
         }
     }
     
@@ -206,21 +237,6 @@
             for(var col = 0; col < arrSize; col++){
                 if (boardArr[row][col] == 1)
                     gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
-            }
-        }
-    }
-    
-    function fadeOut(gameDraw, cellSize, arrSize){
-        for (var row = 0; row < arrSize; row++){
-            for(var col = 0; col < arrSize; col++){
-                var pxlData = gameDraw.getImageData(row*cellSize+1, col*cellSize+1, 1, 1).data;
-                
-                var r = (pxlData[0]<255) ? (pxlData[0]+1) : (255);
-                var g = (pxlData[1]<255) ? (pxlData[1]+1) : (255);
-                var b = (pxlData[2]<255) ? (pxlData[2]+1) : (255);
-                
-                gameDraw.fillStyle = "rgb("+r+","+g+","+b+")";
-                gameDraw.fillRect(row*cellSize+1, col*cellSize+1, cellSize, cellSize);
             }
         }
     }
