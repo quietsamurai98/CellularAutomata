@@ -88,6 +88,7 @@
     var globalBoard = genRandomBoard(boardSize);
     var ruleArr = [ [0,0,0,1,0,0,0,0,0], [0,0,1,1,0,0,0,0,0] ];
     var isPaused = false;
+    var dragging = false;
     setCanvasSize()
     
     var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
