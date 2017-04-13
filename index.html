@@ -3,7 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Conway's Game of Life</title>
-<body>
+<body onload="initialize();">
 
 <h1>Conway's Game Of Life</h1>
 
@@ -11,17 +11,17 @@
 
     <div id = "delayControls" style = "margin:10px 5px;">
       Animation Delay (ms): <br>
-      <input type="number" id="inputDelay" value="10" onchange="changeDelay()">
+      <input type="number" id="inputDelay" value="50" onchange="changeDelay()">
     </div>
     
     <div id = "cellSizeControls" style = "margin:10px 5px;">
       Cell size (pixels): <br>
-      <input type="number" id="inputCellSize" value="2" onchange="setCanvasSize();">
+      <input type="number" id="inputCellSize" value="10" onchange="setCanvasSize();">
     </div>
     
     <div id = "boardSizeControls" style = "margin:10px 5px;">
       Board size: <br>
-      <input type="number" id="inputBoardSize" value="200" onchange="reset()">
+      <input type="number" id="inputBoardSize" value="40" onchange="reset()">
     </div>
     
     <div id = "pauseControls" style = "margin:10px 5px;">
@@ -84,14 +84,26 @@
 </div>
 
 <script>
-    var boardSize = document.getElementById("inputBoardSize").value | 0;
-    var globalBoard = genRandomBoard(boardSize);
-    var ruleArr = [ [0,0,0,1,0,0,0,0,0], [0,0,1,1,0,0,0,0,0] ];
-    var isPaused = false;
-    var dragging = false;
-    setCanvasSize()
+    var globalBoard;    //The array used to store cell states.
+    var boardSize;      //The number of rows/columns in the board. Since the board is a square, the number of rows and columns are equal
+    var ruleArr;        //The array used to store the ruleset. 
+    var isPaused;       //Used to track if the animation is paused.
+    var gameAnimation;  //Stores the ID of the animation interval
     
-    var gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
+    function initialize(){
+        boardSize = document.getElementById("inputBoardSize").value | 0;
+        globalBoard = defaultBoard();
+        ruleArr = [ [0,0,0,1,0,0,0,0,0], [0,0,1,1,0,0,0,0,0] ];
+        isPaused = false;
+        
+        setCanvasSize();
+        startAnimation();
+    }
+    
+    function startAnimation(){
+        var delay = document.getElementById("inputDelay").value | 0; //Gets the delay time from the number input field on the page, converts it to an integer
+        gameAnimation = setInterval(function(){ renderNextGeneration(); }, delay); //Calls renderNextGeneration() every delay milliseconds
+    }
     
     function reset(){
         clearInterval(gameAnimation);
@@ -100,7 +112,7 @@
         setCanvasSize();
         isPaused = false;
         document.getElementById("btnPause").value = "Pause";
-        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
+        startAnimation();
     }
     
     function setCanvasSize(){
@@ -110,7 +122,6 @@
         gameDraw.canvas.width = canvasSize;
         gameDraw.canvas.height = canvasSize;
     }
-    
     function resetRule(){
         for(var i=0; i<9; i++){
             ruleArr[0][i] = (document.getElementById("b"+i).checked) ? 1 : 0;
@@ -126,63 +137,10 @@
         clearInterval(gameAnimation);
         isPaused = false;
         document.getElementById("btnPause").value = "Pause";
-        gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
+        startAnimation();
     }
     
-    function dragStart(event){
-        dragging = true;
-        event.target.style = "cursor: crosshair";
-        var x = event.x;
-        var y = event.y;
-
-        var canvas = document.getElementById("gameCanvas");
-
-        x -= canvas.offsetLeft;
-        y -= canvas.offsetTop;
-
-        var cellSize = document.getElementById("inputCellSize").value;
-        var r = Math.floor(x/cellSize);
-        var c = Math.floor(y/cellSize);
-        
-        dragState = globalBoard[r][c] ? 0: 1;
-        drawCell(r,c);
-    }
-    function dragEnd(event){
-        dragging = false;
-        event.target.style = "cursor: default";
-    }
-    function dragMove(event){
-        if (dragging){
-            event.target.style = "cursor: crosshair";
-            drag(event);
-        }
-    }
-    function drag(event){
-        var x = event.x;
-        var y = event.y;
-
-        var canvas = document.getElementById("gameCanvas");
-
-        x -= canvas.offsetLeft;
-        y -= canvas.offsetTop;
-
-        var cellSize = document.getElementById("inputCellSize").value;
-        var r = Math.floor(x/cellSize);
-        var c = Math.floor(y/cellSize);
-      
-        drawCell(r,c);
-    }
-    
-    function drawCell(r, c){
-        if(isPaused && r<boardSize && c<boardSize && r>=0 && c>=0){
-            globalBoard[r][c] = dragState;
-            var gameCanvas = document.getElementById("gameCanvas");
-            var gameDraw = gameCanvas.getContext("2d");
-            var cellSize = document.getElementById("inputCellSize").value;
-            gameDraw.fillStyle = dragState ? "#000000" : "#FFFFFF";
-            gameDraw.fillRect(r*cellSize+1, c*cellSize+1, cellSize, cellSize);
-        }
-    }
+    function getAnimationDelay() { document.getElementById("inputDelay").value | 0 }
     
     function renderNextGeneration() {
         globalBoard = nextGeneration(globalBoard);
@@ -230,7 +188,6 @@
         gameDraw.stroke();
         
         gameDraw.clearRect(1,1,canvasSize-2,canvasSize-2);
-        //fadeOut(gameDraw, cellSize, arrSize);
         
         
         gameDraw.fillStyle = "#000000";
@@ -254,13 +211,9 @@
         return childBoard;
     }
     
-    function calcState(r,c,arr){
-        var state=arr[r][c];
-        var neighborSum = getNeighborSum(r,c,arr);
-        return ruleArr[state][neighborSum];
-    }
-    
-    function getNeighborSum(row,col,arr){
+    function calcState(row,col,arr){
+        var state=arr[row][col];
+        
         var sum = 0;
         for( var r = row-1; r <= row+1; r++ ){
             for( var c = col-1; c <= col+1; c++ ){
@@ -268,19 +221,120 @@
             }
         }
         sum -= arr[row][col];
-        return sum;
+        
+        return ruleArr[state][sum];
     }
     
     function togglePause(){
         if(isPaused){
             isPaused = false;
-            gameAnimation = setInterval(function(){ renderNextGeneration(); }, document.getElementById("inputDelay").value | 0);
+            startAnimation();
             document.getElementById("btnPause").value = "Pause";
         } else {
             isPaused = true;
             clearInterval(gameAnimation);
             document.getElementById("btnPause").value = "Play";
         }
+    }
+    var dragging = false;
+    function dragStart(event){
+        dragging = true;
+        event.target.style = "cursor: crosshair";
+        var x = event.x;
+        var y = event.y;
+
+        var canvas = document.getElementById("gameCanvas");
+
+        x -= canvas.offsetLeft;
+        y -= canvas.offsetTop;
+
+        var cellSize = document.getElementById("inputCellSize").value;
+        var r = Math.floor(x/cellSize);
+        var c = Math.floor(y/cellSize);
+        
+        dragState = globalBoard[r][c] ? 0: 1;
+        drawCell(r,c);
+    }
+    function dragEnd(event){
+        dragging = false;
+        event.target.style = "cursor: default";
+    }
+    function dragMove(event){
+        if (dragging){
+            event.target.style = "cursor: crosshair";
+            drag(event);
+        }
+    }
+    function drag(event){
+        var x = event.x;
+        var y = event.y;
+
+        var canvas = document.getElementById("gameCanvas");
+
+        x -= canvas.offsetLeft;
+        y -= canvas.offsetTop;
+
+        var cellSize = document.getElementById("inputCellSize").value;
+        var r = Math.floor(x/cellSize);
+        var c = Math.floor(y/cellSize);
+      
+        drawCell(r,c);
+    }
+    function drawCell(r, c){
+        if(isPaused && r<boardSize && c<boardSize && r>=0 && c>=0){
+            globalBoard[r][c] = dragState;
+            var gameCanvas = document.getElementById("gameCanvas");
+            var gameDraw = gameCanvas.getContext("2d");
+            var cellSize = document.getElementById("inputCellSize").value;
+            gameDraw.fillStyle = dragState ? "#000000" : "#FFFFFF";
+            gameDraw.fillRect(r*cellSize+1, c*cellSize+1, cellSize, cellSize);
+        }
+    }
+    
+    function defaultBoard(){
+        out=[
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            ];
+            return out;
     }
     
 </script>
